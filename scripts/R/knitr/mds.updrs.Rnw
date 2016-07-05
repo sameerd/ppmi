@@ -1,0 +1,57 @@
+library(ggplot2)
+
+basedir <- "../../"
+
+mds.updrs.1 <- read.csv(paste0(basedir, "motor/MDS_UPDRS_Part_I.csv"))
+mds.updrs.1p <- read.csv(paste0(basedir, "motor/MDS_UPDRS_Part_I__Patient_Questionnaire.csv"))
+
+mds.updrs.2p <- read.csv(paste0(basedir, "motor/MDS_UPDRS_Part_II__Patient_Questionnaire.csv"))
+
+mds.updrs.3 <- read.csv(paste0(basedir, "motor/MDS_UPDRS_Part_III__Post_Dose_.csv"))
+mds.updrs.4 <- read.csv(paste0(basedir, "motor/MDS_UPDRS_Part_IV.csv"))
+
+
+tail(mds.updrs.1)
+tail(mds.updrs.1p)
+
+mds.updrs.1 <- merge(mds.updrs.1, mds.updrs.1p, by=c("PATNO", "EVENT_ID"))
+part.1.variables <- names(mds.updrs.1)[grep("^NP(.*)", names(mds.updrs.1))]
+length(part.1.variables)
+mds.updrs.1$PART1SCORE <- rowSums(mds.updrs.1[,part.1.variables])
+mds.updrs.1.short <- mds.updrs.1[, c("PATNO", "EVENT_ID", "PART1SCORE")]
+
+part.2.variables <- names(mds.updrs.2p)[grep("^NP(.*)", names(mds.updrs.2p))]
+length(part.2.variables)
+mds.updrs.2p$PART2SCORE <- rowSums(mds.updrs.2p[,part.2.variables])
+mds.updrs.2.short <- mds.updrs.2p[, c("PATNO", "EVENT_ID", "PART2SCORE")]
+
+part.3.variables <- names(mds.updrs.3)[grep("^NP(.*)", names(mds.updrs.3))]
+# why is one of the variables named PN*
+part.3.variables <- c(part.3.variables, names(mds.updrs.3)[grep("^PN(.*)", names(mds.updrs.3))]  )
+length(part.3.variables)
+mds.updrs.3$PART3SCORE <- rowSums(mds.updrs.3[,part.3.variables])
+mds.updrs.3.short <- mds.updrs.3[, c("PATNO", "EVENT_ID", "PART3SCORE")]
+
+part.4.variables <- names(mds.updrs.4)[grep("^NP(.*)", names(mds.updrs.4))]
+length(part.4.variables)
+mds.updrs.4$PART4SCORE <- rowSums(mds.updrs.4[,part.4.variables])
+nrow(mds.updrs.4)
+mds.updrs.4.short <- mds.updrs.4[, c("PATNO", "EVENT_ID", "PART4SCORE")]
+
+
+x <- merge(mds.updrs.1.short, mds.updrs.2.short, by=c("PATNO", "EVENT_ID"))
+x <- merge(x, mds.updrs.3.short, by=c("PATNO", "EVENT_ID"))
+#x <- merge(x, mds.updrs.4.short, by=c("PATNO", "EVENT_ID"))
+
+x$SCORE <- rowSums(x[,grep("PART.SCORE", names(x))])
+head(x)
+tail(x)
+
+#png("~/event_id_vs_score.png", height=900, width=1200)
+qplot(EVENT_ID , SCORE, data=x, geom=c("boxplot"))
+#dev.off()
+
+x.tmp <- x[x$PATNO==3402,]
+qplot(EVENT_ID , SCORE, data=x.tmp, geom=c("boxplot"))
+
+
