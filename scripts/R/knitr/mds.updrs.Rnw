@@ -1,57 +1,187 @@
+%\VignetteEngine{knitr::knitr_notangle}
+
+\documentclass{article}
+\usepackage[sc]{mathpazo}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\geometry{verbose,tmargin=2.5cm,bmargin=2.5cm,lmargin=2.5cm,rmargin=2.5cm}
+\setcounter{secnumdepth}{2}
+\setcounter{tocdepth}{2}
+\usepackage{url}
+\usepackage[unicode=true,pdfusetitle,
+ bookmarks=true,bookmarksnumbered=true,bookmarksopen=true,bookmarksopenlevel=2,
+ breaklinks=false,pdfborder={0 0 1},backref=false,colorlinks=false]
+ {hyperref}
+\hypersetup{
+ pdfstartview={XYZ null null 1}}
+\begin{document}
+
+
+\section{Explore MDS-UPDRS scores}
+
+\subsection{Prepare Data}
+
+<<setup-knitr, cache=FALSE, echo=FALSE>>=
+library(knitr)
 library(ggplot2)
+opts_chunk$set(fig.path="figure/mds-updrs-", cache.path="cache/mds-updrs-")
+@
 
-basedir <- "../../"
+<<read-csv-files, cache=TRUE, echo=TRUE>>=
+FetchFile <- function(filename, subdir, basedir="../../..") {
+  filename <- paste0(basedir, "/", subdir, "/", filename)
+  read.csv(filename)
+}
 
-mds.updrs.1 <- read.csv(paste0(basedir, "motor/MDS_UPDRS_Part_I.csv"))
-mds.updrs.1p <- read.csv(paste0(basedir, "motor/MDS_UPDRS_Part_I__Patient_Questionnaire.csv"))
+# read part 1 of MDS-UPDRS questionaire. Part 1 has two subparts
+mds.updrs.1 <- FetchFile("MDS_UPDRS_Part_I.csv", "motor")
+mds.updrs.1p <- FetchFile("MDS_UPDRS_Part_I__Patient_Questionnaire.csv", "motor")
 
-mds.updrs.2p <- read.csv(paste0(basedir, "motor/MDS_UPDRS_Part_II__Patient_Questionnaire.csv"))
+# read in part 2
+mds.updrs.2p <- FetchFile("MDS_UPDRS_Part_II__Patient_Questionnaire.csv", "motor")
 
-mds.updrs.3 <- read.csv(paste0(basedir, "motor/MDS_UPDRS_Part_III__Post_Dose_.csv"))
-mds.updrs.4 <- read.csv(paste0(basedir, "motor/MDS_UPDRS_Part_IV.csv"))
+# read in part 3. This is the movement part post medication
+mds.updrs.3 <- FetchFile("MDS_UPDRS_Part_III__Post_Dose_.csv", "motor")
 
+# read in part 4. This is for sideeffects of medicine and not used in computing 
+# MDS-UPDRS score
+mds.updrs.4 <- FetchFile("MDS_UPDRS_Part_IV.csv", "motor")
+@
 
-tail(mds.updrs.1)
-tail(mds.updrs.1p)
-
+<<compute-part-scores, cache=TRUE, echo=TRUE>>=
+# merge the two subparts of part 1 and extract out the 13 variables named ^NP*
 mds.updrs.1 <- merge(mds.updrs.1, mds.updrs.1p, by=c("PATNO", "EVENT_ID"))
 part.1.variables <- names(mds.updrs.1)[grep("^NP(.*)", names(mds.updrs.1))]
-length(part.1.variables)
+length(part.1.variables) # should be 13 variables used to calculate part1 subscore
 mds.updrs.1$PART1SCORE <- rowSums(mds.updrs.1[,part.1.variables])
 mds.updrs.1.short <- mds.updrs.1[, c("PATNO", "EVENT_ID", "PART1SCORE")]
 
+# extract out the 13 variables named ^NP(.*) in part 2 and calculate subscore
 part.2.variables <- names(mds.updrs.2p)[grep("^NP(.*)", names(mds.updrs.2p))]
 length(part.2.variables)
 mds.updrs.2p$PART2SCORE <- rowSums(mds.updrs.2p[,part.2.variables])
 mds.updrs.2.short <- mds.updrs.2p[, c("PATNO", "EVENT_ID", "PART2SCORE")]
 
+# Extract out the variables named ^NP(.*) and one named ^PN(.*)
+# There should be 33 variables that are summed to get the part 3 subscore
 part.3.variables <- names(mds.updrs.3)[grep("^NP(.*)", names(mds.updrs.3))]
-# why is one of the variables named PN*
-part.3.variables <- c(part.3.variables, names(mds.updrs.3)[grep("^PN(.*)", names(mds.updrs.3))]  )
+# why is one of the variables named PN* ??
+part.3.variables <- c(part.3.variables, 
+		      names(mds.updrs.3)[grep("^PN(.*)", names(mds.updrs.3))])
 length(part.3.variables)
 mds.updrs.3$PART3SCORE <- rowSums(mds.updrs.3[,part.3.variables])
-mds.updrs.3.short <- mds.updrs.3[, c("PATNO", "EVENT_ID", "PART3SCORE")]
+# We use NUPDRS3 instead of NSPRDS3A as the pagename for now
+# NSPRDS3A is (In Clinic Post Dose)
+mds.updrs.pre.3  <- mds.updrs.3[mds.updrs.3$PAG_NAME == "NUPDRS3",]
+mds.updrs.pre.3.short <- mds.updrs.pre.3[, c("PATNO", "EVENT_ID", "PART3SCORE")]
 
+# extract out the 6 variables named ^NP(.*) in part 4 
+# this is not used to calculate the MPS-UPDRS scores
 part.4.variables <- names(mds.updrs.4)[grep("^NP(.*)", names(mds.updrs.4))]
 length(part.4.variables)
 mds.updrs.4$PART4SCORE <- rowSums(mds.updrs.4[,part.4.variables])
 nrow(mds.updrs.4)
 mds.updrs.4.short <- mds.updrs.4[, c("PATNO", "EVENT_ID", "PART4SCORE")]
+@
 
 
-x <- merge(mds.updrs.1.short, mds.updrs.2.short, by=c("PATNO", "EVENT_ID"))
-x <- merge(x, mds.updrs.3.short, by=c("PATNO", "EVENT_ID"))
-#x <- merge(x, mds.updrs.4.short, by=c("PATNO", "EVENT_ID"))
+<<merge-data, cache=TRUE, echo=TRUE>>=
+merged.updrs <- merge(mds.updrs.1.short, mds.updrs.2.short, 
+		      by=c("PATNO", "EVENT_ID"))
+merged.updrs <- merge(merged.updrs, mds.updrs.pre.3.short, 
+		      by=c("PATNO", "EVENT_ID"))
+merged.updrs$TOTAL_SCORE <- rowSums(merged.updrs[,
+				    grep("PART.SCORE", names(merged.updrs))])
 
-x$SCORE <- rowSums(x[,grep("PART.SCORE", names(x))])
-head(x)
-tail(x)
+# fetch the patient status and merge it into the scores data
+patient.status <- FetchFile("Patient_Status.csv", "subject")
+merged.updrs <- merge(merged.updrs, patient.status[, c("PATNO", "ENROLL_CAT", 
+					  "ENROLL_STATUS")], by=c("PATNO"))
 
-#png("~/event_id_vs_score.png", height=900, width=1200)
-qplot(EVENT_ID , SCORE, data=x, geom=c("boxplot"))
-#dev.off()
+# now only look at enrolled patients and drop excluded, withdrew and pending
+# statuses
+merged.updrs.enrolled <- merged.updrs[merged.updrs$ENROLL_STATUS == "Enrolled",]
+@
 
-x.tmp <- x[x$PATNO==3402,]
-qplot(EVENT_ID , SCORE, data=x.tmp, geom=c("boxplot"))
+\subsection{Event Codes}
 
+\noindent
+These are the event codes that are used in the plots in the next subsection.
+
+<<<event-codes, cache=TRUE, echo=TRUE>>=
+codes <- FetchFile("Code_List.csv", "docs")
+event.ids <- codes[codes$ITM_NAME == "EVENT_ID",]
+# Descriptions of the codes
+event.ids[as.character(event.ids$CODE) %in% levels(merged.updrs$EVENT_ID),
+	  c("CODE", "DECODE")]
+@
+
+\subsection{Plots}
+
+\noindent
+This graph plots all the scores across all the populations. See the previous
+subsection on event codes to decode all the codes on the x-axis. 
+
+<<plot-all-mds-updrs, cache=TRUE, echo=TRUE, fig.width=8, fig.height=5>>=
+qplot(EVENT_ID, TOTAL_SCORE, data=merged.updrs, geom=c("boxplot"), 
+      main="All MDS-UPDRS scores")
+@
+
+\pagebreak
+
+\noindent
+Now we only plot scores of the enrolled subjects
+<<plot-enrolled-mds-updrs, cache=TRUE, echo=TRUE, fig.width=8, fig.height=5>>=
+qplot(EVENT_ID, TOTAL_SCORE, data=merged.updrs.enrolled, geom=c("boxplot"), 
+      main="Enrolled MDS-UPDRS scores")
+@
+
+\pagebreak
+\noindent
+This is the same plot as the previous one but it is split out by the enrollment
+category.
+
+<<plot-enrolled-facets-mds-updrs, cache=TRUE, echo=TRUE, fig.width=8, fig.height=9>>=
+qplot(EVENT_ID, TOTAL_SCORE, data=merged.updrs.enrolled, facets=~ENROLL_CAT, 
+      geom=c("boxplot"), main="Enrolled MDS-UPDRS scores") + 
+theme(axis.text=element_text(size=4))
+@
+
+\noindent
+The PD cohort shows a gradual increase in the median score and the Healthy
+Controls show no such increase. 
+
+\pagebreak
+
+\noindent
+This is the same plot as the previous one but it only graphs the Part III 
+MDS-UPDRS score. These scores are before the clinic dose. 
+
+<<plot-enrolled-facets-mds-updrs-part3, cache=TRUE, echo=TRUE, fig.width=8, fig.height=9>>=
+qplot(EVENT_ID, PART3SCORE, data=merged.updrs.enrolled, facets=~ENROLL_CAT, 
+      geom=c("boxplot"), main="Enrolled MDS-UPDRS Part 3 scores") +
+theme(axis.text=element_text(size=4))
+@
+
+\newpage
+
+\subsection{Focus on PD cohort and Part 3 scores}
+
+<<plot-pd-part3, cache=TRUE, echo=TRUE>>=
+merged.updrs.3 <- merge(mds.updrs.3, patient.status[, c("PATNO", "ENROLL_CAT", 
+					  "ENROLL_STATUS")], by=c("PATNO"))
+
+# now only look at enrolled patients and drop excluded, withdrew and pending
+# statuses
+merged.updrs.3.enrolled.pd <- merged.updrs.3[
+	(merged.updrs.3$ENROLL_STATUS == "Enrolled") & 
+	(merged.updrs.3$ENROLL_CAT == "PD"),]
+qplot(EVENT_ID, PART3SCORE, data=merged.updrs.3.enrolled.pd, 
+      geom=c("boxplot"), facets=PAG_NAME~., 
+      main="Part III scores for PD cohort (pre and post clinic dose)")
+@
+
+
+
+\end{document}
 

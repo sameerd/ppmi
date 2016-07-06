@@ -5,7 +5,7 @@
 %.pdf: %.tex
 	pdflatex $<
 
-analysis.pdf: analysis.tex
+mds.updrs.pdf: mds.updrs.tex
 
 .PHONY: clean deepclean
 
@@ -15,3 +15,5 @@ clean:
 
 deepclean: clean
 	cd cache; rm -f *
+	cd ..
+	cd figure; rm -f *
