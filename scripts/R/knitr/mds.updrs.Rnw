@@ -167,7 +167,13 @@ theme(axis.text=element_text(size=4))
 
 \subsection{Focus on PD cohort and Part 3 scores}
 
-<<plot-pd-part3, cache=TRUE, echo=TRUE>>=
+\noindent
+In this plot we focus on the PD cohort that is enrolled and also only on the
+part 3 scores. There are two types of part 3 scores. Page {\tt NUPDRS3A}
+consists of scores {\it In Clinic Post Dose}. Page {\tt NUPDRS3} is most likely
+the pre-dose results.
+
+<<plot-pd-part3, cache=TRUE, echo=TRUE, fig.width=8, fig.height=7>>=
 merged.updrs.3 <- merge(mds.updrs.3, patient.status[, c("PATNO", "ENROLL_CAT", 
 					  "ENROLL_STATUS")], by=c("PATNO"))
 
@@ -180,6 +186,33 @@ qplot(EVENT_ID, PART3SCORE, data=merged.updrs.3.enrolled.pd,
       geom=c("boxplot"), facets=PAG_NAME~., 
       main="Part III scores for PD cohort (pre and post clinic dose)")
 @
+
+\noindent
+Now we look at the distibution of the change in Part III scores from baseline
+for the enrolled PD cohort. These scores are the before meds scores.
+
+<<plot-pd-part3-v12-dist, cache=TRUE, echo=TRUE, fig.width=8, fig.height=5>>=
+pd.pats.short <- merged.updrs.3.enrolled.pd[
+		       merged.updrs.3.enrolled.pd$PAG_NAME == "NUPDRS3", 
+		       c("PATNO", "EVENT_ID", "PART3SCORE")]
+pd.pats.sp <- split(pd.pats.short, pd.pats.short$PATNO)
+pd.pats.sp <- lapply(pd.pats.sp, function(z) {
+	bl <- z[z$EVENT_ID == "BL", "PART3SCORE"]
+	z$PART3MINUSBL <- z$PART3SCORE - as.numeric(bl)
+	z$SCOREDIFF_CAT <- paste0(as.character(z$EVENT_ID), "-BL")
+	z
+})
+pd.pats.short <- do.call(rbind.data.frame, pd.pats.sp)
+pd.pats.short$SCOREDIFF_CAT<- as.factor(pd.pats.short$SCOREDIFF_CAT)
+
+#number of patients in each score difference category
+summary(pd.pats.short$SCOREDIFF_CAT)
+
+qplot(SCOREDIFF_CAT, PART3MINUSBL, data=pd.pats.short, geom="boxplot",
+      main="Change in Part III Scores from baseline for enrolled PD cohort\
+      (pre-dose)") + theme(axis.text.x = element_text(angle = 60, hjust = 1))
+@
+
 
 
 
