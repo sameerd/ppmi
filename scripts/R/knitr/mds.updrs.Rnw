@@ -191,7 +191,7 @@ qplot(EVENT_ID, PART3SCORE, data=merged.updrs.3.enrolled.pd,
 Now we look at the distibution of the change in Part III scores from baseline
 for the enrolled PD cohort. These scores are the before meds scores.
 
-<<plot-pd-part3-v12-dist, cache=TRUE, echo=TRUE, fig.width=8, fig.height=5>>=
+<<plot-pd-part3-dist, cache=TRUE, echo=TRUE, fig.width=8, fig.height=5>>=
 pd.pats.short <- merged.updrs.3.enrolled.pd[
 		       merged.updrs.3.enrolled.pd$PAG_NAME == "NUPDRS3", 
 		       c("PATNO", "EVENT_ID", "PART3SCORE")]
@@ -209,8 +209,50 @@ pd.pats.short$SCOREDIFF_CAT<- as.factor(pd.pats.short$SCOREDIFF_CAT)
 summary(pd.pats.short$SCOREDIFF_CAT)
 
 qplot(SCOREDIFF_CAT, PART3MINUSBL, data=pd.pats.short, geom="boxplot",
-      main="Change in Part III Scores from baseline for enrolled PD cohort\
-      (pre-dose)") + theme(axis.text.x = element_text(angle = 60, hjust = 1))
+      main="Change in Part III Scores from baseline for enrolled PD cohort
+(in clinic pre-dose)") 
+      + theme(axis.text.x = element_text(angle = 60, hjust = 1))
+@
+
+\noindent
+Now we plot a little bit of the time series of the part III scores to see how
+they are changing through time. 
+
+<<plot-pd-part3-ts, cache=TRUE, echo=TRUE, fig.width=8, fig.height=6>>=
+# make a quasi time series version of the data by dropping levels
+pd.pats.short.ts <- pd.pats.short
+pd.pats.short.ts$PATNO <- as.factor(pd.pats.short.ts$PATNO)
+
+desired.events <- c("BL", sprintf("V%02d", 1:12))
+
+pd.pats.short.ts <- pd.pats.short.ts[
+			pd.pats.short.ts$EVENT_ID %in% desired.events,]
+pd.pats.short.ts <- droplevels(pd.pats.short.ts)
+
+ggplot(data=pd.pats.short.ts, aes(x=SCOREDIFF_CAT, PART3MINUSBL, group=PATNO)) + 
+	geom_point() + geom_line(alpha=0.1) + 
+	theme(axis.text.x = element_text(angle = 60, hjust = 1)) + 
+	ggtitle("Change in Part III scores from baseline for enrolled PD cohort
+(in clinic pre-dose) : Restricted to some events")
+@
+
+\newpage
+
+\noindent
+Lets take a look at which patients are outliers
+
+<<outliers-pd-part3-ts, cache=TRUE, echo=TRUE>>=
+pd.pats.short.split <- split(pd.pats.short.ts, pd.pats.short.ts$SCOREDIFF_CAT)
+pd.pats.short.split[["BL-BL"]] <- NULL
+
+#Patient Numbers that are outliers at each level
+sapply(pd.pats.short.split, function(z) {
+  maxes <- as.numeric(z$PATNO[which.max(z$PART3MINUSBL)])
+  mins <- as.numeric(z$PATNO[which.min(z$PART3MINUSBL)])
+  list(maxes=maxes, mins=mins)
+})
+
+
 @
 
 
