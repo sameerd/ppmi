@@ -30,7 +30,7 @@ opts_chunk$set(fig.path="figure/mds-updrs-", cache.path="cache/mds-updrs-")
 <<read-csv-files, cache=TRUE, echo=TRUE>>=
 FetchFile <- function(filename, subdir, basedir="../../..") {
   filename <- paste0(basedir, "/", subdir, "/", filename)
-  read.csv(filename)
+  read.csv(filename, stringsAsFactors=FALSE)
 }
 
 # read part 1 of MDS-UPDRS questionaire. Part 1 has two subparts
@@ -116,7 +116,7 @@ These are the event codes that are used in the plots in the next subsection.
 codes <- FetchFile("Code_List.csv", "docs")
 event.ids <- codes[codes$ITM_NAME == "EVENT_ID",]
 # Descriptions of the codes
-event.ids[as.character(event.ids$CODE) %in% levels(merged.updrs$EVENT_ID),
+event.ids[as.character(event.ids$CODE) %in% merged.updrs$EVENT_ID,
 	  c("CODE", "DECODE")]
 @
 
@@ -195,24 +195,27 @@ qplot(EVENT_ID, PART3SCORE, data=merged.updrs.3.enrolled.pd,
 Now we look at the distibution of the change in Part III scores from baseline
 for the enrolled PD cohort. These scores are the before meds scores.
 
-<<plot-pd-part3-dist, cache=TRUE, echo=TRUE, fig.width=8, fig.height=5>>=
+<<plot-pd-part3-dist, cache=TRUE, echo=TRUE, fig.width=8, fig.height=4.5>>=
 pd.pats.short <- merged.updrs.3.enrolled.pd[
 		       merged.updrs.3.enrolled.pd$PAG_NAME == "NUPDRS3", 
 		       c("PATNO", "EVENT_ID", "PART3SCORE", part.3.variables)]
 pd.pats.sp <- split(pd.pats.short, pd.pats.short$PATNO)
-pd.pats.sp <- lapply(pd.pats.sp, function(z) {
-	bl <- z[z$EVENT_ID == "BL", "PART3SCORE"]
-	z$PART3MINUSBL <- z$PART3SCORE - as.numeric(bl)
-	z$SCOREDIFF_CAT <- paste0(as.character(z$EVENT_ID), "-BL")
-	z
+vars.of.interest <- c("PART3SCORE", part.3.variables)
+pd.pats.bl.sp <- lapply(pd.pats.sp, function(z) {
+	bl <- z[z$EVENT_ID == "BL", vars.of.interest]
+	bl.changes <- apply(z[, vars.of.interest], 1, function(z1) z1 - bl)
+	bl.changes <- do.call(rbind, bl.changes)
+	bl.changes$SCOREDIFF_CAT <- paste0(as.character(z$EVENT_ID), "-BL")
+	bl.changes$PATNO <- z$PATNO
+	bl.changes
 })
-pd.pats.short <- do.call(rbind.data.frame, pd.pats.sp)
-pd.pats.short$SCOREDIFF_CAT<- as.factor(pd.pats.short$SCOREDIFF_CAT)
+pd.pats.bl.changes <- do.call(rbind.data.frame, pd.pats.bl.sp)
+pd.pats.bl.changes$SCOREDIFF_CAT<- as.factor(pd.pats.bl.changes$SCOREDIFF_CAT)
 
 #number of patients in each score difference category
-summary(pd.pats.short$SCOREDIFF_CAT)
+summary(pd.pats.bl.changes$SCOREDIFF_CAT)
 
-qplot(SCOREDIFF_CAT, PART3MINUSBL, data=pd.pats.short, geom="boxplot",
+qplot(SCOREDIFF_CAT, PART3SCORE, data=pd.pats.bl.changes, geom="boxplot",
       main="Change in Part III Scores from baseline for enrolled PD cohort
 (in clinic pre-dose)") + theme(axis.text.x = element_text(angle = 60, hjust = 1))
 @
@@ -223,19 +226,21 @@ they are changing through time.
 
 <<plot-pd-part3-ts, cache=TRUE, echo=TRUE, fig.width=8, fig.height=6>>=
 # make a quasi time series version of the data by dropping levels
-pd.pats.short.ts <- pd.pats.short
-pd.pats.short.ts$PATNO <- as.factor(pd.pats.short.ts$PATNO)
+pd.pats.bl.changes.ts <- pd.pats.bl.changes
+pd.pats.bl.changes.ts$PATNO <- as.factor(pd.pats.bl.changes.ts$PATNO)
 
 desired.events <- c("BL", sprintf("V%02d", 1:12))
+desired.changes <- paste0(desired.events, "-BL")
 
-pd.pats.short.ts <- pd.pats.short.ts[
-			pd.pats.short.ts$EVENT_ID %in% desired.events,]
-pd.pats.short.ts <- droplevels(pd.pats.short.ts)
+pd.pats.bl.changes.ts <- pd.pats.bl.changes.ts[
+			pd.pats.bl.changes.ts$SCOREDIFF_CAT %in% desired.changes,]
+pd.pats.bl.changes.ts <- droplevels(pd.pats.bl.changes.ts)
 
-ggplot(data=pd.pats.short.ts, aes(x=SCOREDIFF_CAT, PART3MINUSBL, group=PATNO)) + 
-	geom_point() + geom_line(alpha=0.1) + 
-	theme(axis.text.x = element_text(angle = 60, hjust = 1)) + 
-	ggtitle("Change in Part III scores from baseline for enrolled PD cohort
+ggplot(data=pd.pats.bl.changes.ts, 
+       aes(x=SCOREDIFF_CAT, PART3SCORE, group=PATNO)) + 
+       geom_point() + geom_line(alpha=0.1) + 
+       theme(axis.text.x = element_text(angle = 60, hjust = 1)) + 
+       ggtitle("Change in Part III scores from baseline for enrolled PD cohort
 (in clinic pre-dose) : Restricted to some events")
 @
 
@@ -249,27 +254,25 @@ part.3.variables.desc<- as.character(data.dict$DSCR[
 for (i in 1:length(part.3.variables)) {
   currvar <- part.3.variables[i]
   currdesc <- part.3.variables.desc[i]
-  gg <- ggplot(data=pd.pats.short.ts, 
-               aes_string(x="EVENT_ID", y=currvar, group="PATNO")) + 
+  gg <- ggplot(data=pd.pats.bl.changes.ts, 
+               aes_string(x="SCOREDIFF_CAT", y=currvar, group="PATNO")) + 
                geom_point() + geom_line(alpha=0.1) + ylab(currdesc)
   print(gg)
 }
 @
 
-
-\newpage
-
 \noindent
-Lets take a look at which patients are outliers
+Lets take a look at which patients are outliers in the total Part III score.
 
 <<outliers-pd-part3-ts, cache=TRUE, echo=TRUE>>=
-pd.pats.short.split <- split(pd.pats.short.ts, pd.pats.short.ts$SCOREDIFF_CAT)
-pd.pats.short.split[["BL-BL"]] <- NULL
+pd.pats.bl.changes.split <- split(pd.pats.bl.changes.ts, 
+				  pd.pats.bl.changes.ts$SCOREDIFF_CAT)
+pd.pats.bl.changes.split[["BL-BL"]] <- NULL
 
 #Patient Numbers that are outliers at each level
-sapply(pd.pats.short.split, function(z) {
-  maxes <- as.numeric(as.character(z$PATNO[which.max(z$PART3MINUSBL)]))
-  mins <- as.numeric(as.character(z$PATNO[which.min(z$PART3MINUSBL)]))
+sapply(pd.pats.bl.changes.split, function(z) {
+  maxes <- as.numeric(as.character(z$PATNO[which.max(z$PART3SCORE)]))
+  mins <- as.numeric(as.character(z$PATNO[which.min(z$PART3SCORE)]))
   list(maxes=maxes, mins=mins)
 })
 @
@@ -300,11 +303,14 @@ Here we look at which subjects didn't complete the UPDRS at baseline.
 
 <<use-of-meds, cache=TRUE, echo=TRUE>>=
 meds.dat <- FetchFile("Use_of_PD_Medication.csv", "medical")
-pd.pats.meds <- merge(pd.pats.short, meds.dat[,
-		      c("PATNO", "EVENT_ID", "PDMEDYN", "ONLDOPA", "ONDOPAG", 
-			"ONOTHER", "FULNUPDR", "PDMEDDT", "PDMEDTM", "NUPDRTM")])
 
-table(pd.pats.meds$EVENT_ID, pd.pats.meds$FULNUPDR)
+pd.pats.meds <- merge(pd.pats.short[, c("PATNO", "EVENT_ID", "PART3SCORE")], 
+		      meds.dat[, c("PATNO", "EVENT_ID", "PDMEDYN", "ONLDOPA", 
+				   "ONDOPAG", "ONOTHER", "FULNUPDR", "PDMEDDT", 
+				   "PDMEDTM", "NUPDRTM")])
+
+table(pd.pats.meds$EVENT_ID, as.numeric(pd.pats.meds$FULNUPDR), useNA="ifany")
+table(pd.pats.meds$EVENT_ID, pd.pats.meds$PDMEDYN, useNA="ifany")
 @
 
 \end{document}
