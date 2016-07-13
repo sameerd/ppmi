@@ -43,7 +43,7 @@ mds.updrs.2p <- FetchFile("MDS_UPDRS_Part_II__Patient_Questionnaire.csv", "motor
 # read in part 3. This is the movement part post medication
 mds.updrs.3 <- FetchFile("MDS_UPDRS_Part_III__Post_Dose_.csv", "motor")
 
-# read in part 4. This is for sideeffects of medicine and not used in computing 
+# read in part 4. This is for side effects of medicine and not used in computing 
 # MDS-UPDRS score
 mds.updrs.4 <- FetchFile("MDS_UPDRS_Part_IV.csv", "motor")
 @
@@ -54,13 +54,13 @@ mds.updrs.1 <- merge(mds.updrs.1, mds.updrs.1p, by=c("PATNO", "EVENT_ID"))
 part.1.variables <- names(mds.updrs.1)[grep("^NP(.*)", names(mds.updrs.1))]
 length(part.1.variables) # should be 13 variables used to calculate part1 subscore
 mds.updrs.1$PART1SCORE <- rowSums(mds.updrs.1[,part.1.variables])
-mds.updrs.1.short <- mds.updrs.1[, c("PATNO", "EVENT_ID", "PART1SCORE")]
+mds.updrs.1.short <- mds.updrs.1[, c("PATNO", "EVENT_ID", "PART1SCORE", part.1.variables)]
 
 # extract out the 13 variables named ^NP(.*) in part 2 and calculate subscore
 part.2.variables <- names(mds.updrs.2p)[grep("^NP(.*)", names(mds.updrs.2p))]
 length(part.2.variables)
 mds.updrs.2p$PART2SCORE <- rowSums(mds.updrs.2p[,part.2.variables])
-mds.updrs.2.short <- mds.updrs.2p[, c("PATNO", "EVENT_ID", "PART2SCORE")]
+mds.updrs.2.short <- mds.updrs.2p[, c("PATNO", "EVENT_ID", "PART2SCORE", part.2.variables)]
 
 # Extract out the variables named ^NP(.*) and one named ^PN(.*)
 # There should be 33 variables that are summed to get the part 3 subscore
@@ -73,7 +73,8 @@ mds.updrs.3$PART3SCORE <- rowSums(mds.updrs.3[,part.3.variables])
 # We use NUPDRS3 instead of NSPRDS3A as the pagename for now
 # NSPRDS3A is (In Clinic Post Dose)
 mds.updrs.pre.3  <- mds.updrs.3[mds.updrs.3$PAG_NAME == "NUPDRS3",]
-mds.updrs.pre.3.short <- mds.updrs.pre.3[, c("PATNO", "EVENT_ID", "PART3SCORE")]
+mds.updrs.pre.3.short <- mds.updrs.pre.3[, c("PATNO", "EVENT_ID", "PART3SCORE", part.3.variables)]
+
 
 # extract out the 6 variables named ^NP(.*) in part 4 
 # this is not used to calculate the MPS-UPDRS scores
@@ -81,7 +82,7 @@ part.4.variables <- names(mds.updrs.4)[grep("^NP(.*)", names(mds.updrs.4))]
 length(part.4.variables)
 mds.updrs.4$PART4SCORE <- rowSums(mds.updrs.4[,part.4.variables])
 nrow(mds.updrs.4)
-mds.updrs.4.short <- mds.updrs.4[, c("PATNO", "EVENT_ID", "PART4SCORE")]
+mds.updrs.4.short <- mds.updrs.4[, c("PATNO", "EVENT_ID", "PART4SCORE", part.4.variables)]
 @
 
 
@@ -101,6 +102,9 @@ merged.updrs <- merge(merged.updrs, patient.status[, c("PATNO", "ENROLL_CAT",
 # now only look at enrolled patients and drop excluded, withdrew and pending
 # statuses
 merged.updrs.enrolled <- merged.updrs[merged.updrs$ENROLL_STATUS == "Enrolled",]
+
+nrow(merged.updrs.enrolled)
+sum(is.na(merged.updrs.enrolled$PART3SCORE))
 @
 
 \subsection{Event Codes}
@@ -122,7 +126,7 @@ event.ids[as.character(event.ids$CODE) %in% levels(merged.updrs$EVENT_ID),
 This graph plots all the scores across all the populations. See the previous
 subsection on event codes to decode all the codes on the x-axis. 
 
-<<plot-all-mds-updrs, cache=TRUE, echo=TRUE, fig.width=8, fig.height=5>>=
+<<plot-all-mds-updrs, cache=TRUE, echo=TRUE, fig.width=8, fig.height=4.5>>=
 qplot(EVENT_ID, TOTAL_SCORE, data=merged.updrs, geom=c("boxplot"), 
       main="All MDS-UPDRS scores")
 @
@@ -194,7 +198,7 @@ for the enrolled PD cohort. These scores are the before meds scores.
 <<plot-pd-part3-dist, cache=TRUE, echo=TRUE, fig.width=8, fig.height=5>>=
 pd.pats.short <- merged.updrs.3.enrolled.pd[
 		       merged.updrs.3.enrolled.pd$PAG_NAME == "NUPDRS3", 
-		       c("PATNO", "EVENT_ID", "PART3SCORE")]
+		       c("PATNO", "EVENT_ID", "PART3SCORE", part.3.variables)]
 pd.pats.sp <- split(pd.pats.short, pd.pats.short$PATNO)
 pd.pats.sp <- lapply(pd.pats.sp, function(z) {
 	bl <- z[z$EVENT_ID == "BL", "PART3SCORE"]
@@ -237,6 +241,24 @@ ggplot(data=pd.pats.short.ts, aes(x=SCOREDIFF_CAT, PART3MINUSBL, group=PATNO)) +
 
 \newpage
 
+\subsection{Subparts of Part III UPDRS Score}
+<<plot-pd-part3-subscore-ts, cache=TRUE, echo=TRUE, fig.keep='all', fig.width=8, fig.height=3>>=
+data.dict <- FetchFile("Data_Dictionary.csv", "docs")
+part.3.variables.desc<- as.character(data.dict$DSCR[
+                           match(part.3.variables, data.dict$ITM_NAME)])
+for (i in 1:length(part.3.variables)) {
+  currvar <- part.3.variables[i]
+  currdesc <- part.3.variables.desc[i]
+  gg <- ggplot(data=pd.pats.short.ts, 
+               aes_string(x="EVENT_ID", y=currvar, group="PATNO")) + 
+               geom_point() + geom_line(alpha=0.1) + ylab(currdesc)
+  print(gg)
+}
+@
+
+
+\newpage
+
 \noindent
 Lets take a look at which patients are outliers
 
@@ -270,6 +292,20 @@ sapply(pd.pats.short.mri.sp, function(z) {
 })
 @
 
+
+\subsection{Use of Meds}
+
+\noindent
+Here we look at which subjects didn't complete the UPDRS at baseline. 
+
+<<use-of-meds, cache=TRUE, echo=TRUE>>=
+meds.dat <- FetchFile("Use_of_PD_Medication.csv", "medical")
+pd.pats.meds <- merge(pd.pats.short, meds.dat[,
+		      c("PATNO", "EVENT_ID", "PDMEDYN", "ONLDOPA", "ONDOPAG", 
+			"ONOTHER", "FULNUPDR", "PDMEDDT", "PDMEDTM", "NUPDRTM")])
+
+table(pd.pats.meds$EVENT_ID, pd.pats.meds$FULNUPDR)
+@
 
 \end{document}
 
