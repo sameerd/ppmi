@@ -210,8 +210,7 @@ summary(pd.pats.short$SCOREDIFF_CAT)
 
 qplot(SCOREDIFF_CAT, PART3MINUSBL, data=pd.pats.short, geom="boxplot",
       main="Change in Part III Scores from baseline for enrolled PD cohort
-(in clinic pre-dose)") 
-      + theme(axis.text.x = element_text(angle = 60, hjust = 1))
+(in clinic pre-dose)") + theme(axis.text.x = element_text(angle = 60, hjust = 1))
 @
 
 \noindent
@@ -247,15 +246,29 @@ pd.pats.short.split[["BL-BL"]] <- NULL
 
 #Patient Numbers that are outliers at each level
 sapply(pd.pats.short.split, function(z) {
-  maxes <- as.numeric(z$PATNO[which.max(z$PART3MINUSBL)])
-  mins <- as.numeric(z$PATNO[which.min(z$PART3MINUSBL)])
+  maxes <- as.numeric(as.character(z$PATNO[which.max(z$PART3MINUSBL)]))
+  mins <- as.numeric(as.character(z$PATNO[which.min(z$PART3MINUSBL)]))
   list(maxes=maxes, mins=mins)
 })
-
-
 @
 
 
+\subsection{DTI Scans}
+
+\noindent
+Here we look at which MRI data has DTI scan data as well.
+
+<<dti-scans, cache=TRUE, echo=TRUE>>=
+mri.dat <- FetchFile("Magnetic_Resonance_Imaging.csv", "imaging")
+pd.pats.short.mri <- merge(pd.pats.short, mri.dat[, 
+			   c("PATNO", "EVENT_ID", "MRIWDTI")])
+pd.pats.short.mri.sp <- split(pd.pats.short.mri, pd.pats.short.mri$EVENT_ID)
+
+# Count of the number of MRI scans with DTI
+sapply(pd.pats.short.mri.sp, function(z) {
+  list(patients=nrow(z), scans=sum(z$MRIWDTI == 1, na.rm=T))
+})
+@
 
 
 \end{document}
