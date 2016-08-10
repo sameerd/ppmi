@@ -1,56 +1,83 @@
+import numpy as np
 import ppmilib.utils as utils
+from ppmilib.patient import Patient, PatientDict
+from ppmilib.datadictionary import DataDictionary
 import corex.corex as ce
 
-data_dict_pd = utils.fetch_ppmi_data_file("Data_Dictionary.csv", "docs")
 
-data_dict_nupdrs3 = data_dict_pd[data_dict_pd.MOD_NAME == "NUPDRS3"]
-data_dict_nupdrs3 = data_dict_nupdrs3[data_dict_nupdrs3.SEQ_NO > 0]
-data_dict_nupdrs3 = dict(zip(data_dict_nupdrs3.ITM_NAME, data_dict_nupdrs3.DSCR))
+# Get the UPDRS Part 3 data
+mds_updrs_3 = utils.fetch_ppmi_data_file("MDS_UPDRS_Part_III__Post_Dose_.csv", 
+                                         "motor")
+# Create a mask of the baseline
+baseline_mask = (mds_updrs_3.EVENT_ID == "BL")
+# Create a mask of the NUPDRS3 page (this is pre-dose)
+pagename_mask = (mds_updrs_3.PAG_NAME == "NUPDRS3")
 
-mds_updrs_3 = utils.fetch_ppmi_data_file("MDS_UPDRS_Part_III__Post_Dose_.csv",  \
-        "motor")
+# dataframe of baseline UPDRS3 data
+mds_updrs_3_bl = mds_updrs_3[baseline_mask & pagename_mask]
 
+# Extract the column names for the subscores of UPDRS3
+updrs3_column_names = [x for x in mds_updrs_3_bl.columns if 
+        (x[:2] == "NP" or x[:2] == "PN")]
+# There should be 33 variables
+len(updrs3_column_names) == 33
 
-mask = (mds_updrs_3.EVENT_ID == "BL")
-mask = mask & (mds_updrs_3.PAG_NAME == "NUPDRS3")
+# Create a dictionary that expands the column names into descriptions
+data_dict = DataDictionary.create()
+column_namesd = data_dict.get_column_dict("NUPDRS3")
 
-mds_updrs_3_bl = mds_updrs_3[mask]
+# Create a Patients Dictionary
+patient_dict = PatientDict.create()
 
-part_3_vars = [x for x in mds_updrs_3_bl.columns if (x[:2] == "NP" or x[:2] == "PN")]
+# Create masks of enrolled patients and PD patients
+enrolled_mask = patient_dict.get_enrolled_mask(mds_updrs_3_bl.PATNO)
+pd_mask = patient_dict.get_pd_mask(mds_updrs_3_bl.PATNO)
 
-len(part_3_vars == 33)
+# Reduce to only enrolled PD patients
+mds_updrs_3_bl_enrolled_pd = mds_updrs_3_bl[enrolled_mask & pd_mask]
 
+def PrepareForCorex(df, updrs3_column_names):
+    """Prepare the dataframe for input into Corex"""
+    # reduce to part 3 variables only
+    x = df[updrs3_column_names]
+    # drop NA's for now. FIXME: replace by -1's later
+    x = x.dropna()
+    # cast to integer matrix
+    x = x.as_matrix().astype(np.int_)
+    return x
 
-part_3_values = mds_updrs_3_bl[part_3_vars]
+mds_updrs_3_bl_values = PrepareForCorex(mds_updrs_3_bl, updrs3_column_names)
+print(mds_updrs_3_bl_values.shape)
 
-# drop missing values
-part_3_values = part_3_values.dropna()
+mds_updrs_3_bl_enrolled_pd_values = PrepareForCorex(mds_updrs_3_bl_enrolled_pd, 
+        updrs3_column_names)
+print(mds_updrs_3_bl_enrolled_pd_values.shape)
 
-part_3_values = part_3_values.as_matrix()
-part_3_values = part_3_values.astype(np.int_)
+updrs3_expanded_column_names = [column_namesd[x] for x in updrs3_column_names]
 
+def PrintClusters(layer, names):
+    clusters = layer.clusters
+    unique_clusters = np.unique(clusters)
+    for x in unique_clusters:
+        print "Cluster ID: %d" % x
+        print "\n".join([names[i] for i, c in enumerate(clusters) if c == x])
+        print
 
-layer1 = ce.Corex(n_hidden=4)
+X = mds_updrs_3_bl_values
+#X = mds_updrs_3_bl_enrolled_pd_values
 
-layer1.fit(part_3_values)
+layer1 = ce.Corex(n_hidden=30)
+Y1 = layer1.fit_transform(X)
+layer1.clusters
+C1 = np.unique(layer1.clusters).size
+layer1.tc
+layer1.tcs
+Y1.shape
+PrintClusters(layer1, updrs3_expanded_column_names)
 
-variables = [None] * (layer1.clusters.max() + 1)
-
-for i in range(layer1.clusters.size):
-    cluster = layer1.clusters[i]
-    if variables[cluster] is None:
-        variables[cluster] = []
-    print (cluster)
-    print (part_3_vars[i])
-    variables[layer1.clusters[i]].append(part_3_vars[i])
-    
-for i in range(len(variables)):
-    print("Cluster " + str(i+1) +" : tcs %.2f" % layer1.tcs[i])
-    for value in variables[i]:
-        print(data_dict_nupdrs3[value])
-    print("")
-
-
-
-
-
+layer2 = ce.Corex(n_hidden=C1-1)
+Y2 = layer2.fit_transform(Y1)
+layer2.clusters
+C2 = np.unique(layer1.clusters).size
+layer2.tc
+layer2.tcs
