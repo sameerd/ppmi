@@ -1,27 +1,21 @@
 from collections import namedtuple
 
 import numpy as np
-import ppmilib.utils as utils
+import ppmilib.updrs3 as updrs3
 from ppmilib.patient import Patient, PatientDict
 from ppmilib.datadictionary import DataDictionary
 import corex.corex as ce
+from corex.utils import PrepareForCorex
 
 from ete3 import Tree, ClusterTree, TreeStyle
 
-# Get the UPDRS Part 3 data
-mds_updrs_3 = utils.fetch_ppmi_data_file("MDS_UPDRS_Part_III__Post_Dose_.csv", 
-                                         "motor")
-# Create a mask of the baseline
-baseline_mask = (mds_updrs_3.EVENT_ID == "BL")
-# Create a mask of the NUPDRS3 page (this is pre-dose)
-pagename_mask = (mds_updrs_3.PAG_NAME == "NUPDRS3")
 
-# dataframe of baseline UPDRS3 data
-mds_updrs_3_bl = mds_updrs_3[baseline_mask & pagename_mask]
+# Get the UPDRS Part 3 
+# dataframe of baseline UPDRS3 data of the NUPDRS3 page (this is pre-dose)
+mds_updrs_3_bl = updrs3.fetch_updrs_3_file(event_id="BL", page_name="NUPDRS3")
 
-# Extract the column names for the subscores of UPDRS3
-updrs3_column_names = [x for x in mds_updrs_3_bl.columns if 
-        (x[:2] == "NP" or x[:2] == "PN")]
+
+updrs3_column_names = updrs3.extract_subscore_column_names(mds_updrs_3_bl)
 # There should be 33 variables
 len(updrs3_column_names) == 33
 
@@ -38,16 +32,6 @@ pd_mask = patient_dict.get_pd_mask(mds_updrs_3_bl.PATNO)
 
 # Reduce to only enrolled PD patients
 mds_updrs_3_bl_enrolled_pd = mds_updrs_3_bl[enrolled_mask & pd_mask]
-
-def PrepareForCorex(df, updrs3_column_names):
-    """Prepare the dataframe for input into Corex"""
-    # reduce to part 3 variables only
-    x = df[updrs3_column_names]
-    # drop NA's for now. FIXME: replace by -1's later
-    x = x.dropna()
-    # cast to integer matrix
-    x = x.as_matrix().astype(np.int_)
-    return x
 
 mds_updrs_3_bl_values = PrepareForCorex(mds_updrs_3_bl, updrs3_column_names)
 print(mds_updrs_3_bl_values.shape)
