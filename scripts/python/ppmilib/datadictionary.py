@@ -1,4 +1,4 @@
-import utils
+from . import utils
 
 class DataDictionary(object):
     """ Wrapper for the data dictionary to explain all the variable names """

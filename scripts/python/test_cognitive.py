@@ -28,7 +28,7 @@ column_namesd = data_dict.get_column_dict("NUPDRS3")
 benton_df = cognitive.fetch_benton_judgement_line_orientation(
                  event_id="BL", page_name = "BENTONOD", 
                  keep_important_cols_only=True)
-mds_updrs_3_bl = pd.merge(mds_updrs_3_bl, benton_df], on="PATNO")
+mds_updrs_3_bl = pd.merge(mds_updrs_3_bl, benton_df, on="PATNO")
 
 # Hopkins Verbal Learning Test #
 hvlt_df = cognitive.fetch_hopkins_verbal_learning_test(event_id="BL", 

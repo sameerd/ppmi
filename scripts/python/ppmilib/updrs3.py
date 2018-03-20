@@ -1,4 +1,4 @@
-import utils
+from . import utils
 
 def fetch_updrs_3_file(event_id="BL", page_name="NUPDRS3"):
     """Get the UPDRS Part 3 data. The default arguments will return baseline

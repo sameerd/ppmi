@@ -1,4 +1,6 @@
-import utils
+import pandas as pd
+
+from . import utils
 
 # All the routines for cognitive data go in here
 
@@ -42,7 +44,7 @@ def fetch_hopkins_verbal_learning_test(event_id="BL",
         hvlt_df = hvlt_df[["PATNO", "HVLTRDLY", "HVLTREC", 
                                     "HVLT_IR", "HVLT_DR"]]
 
-    return(hvlt)
+    return(hvlt_df)
 
 
 def fetch_letter_number_sequencing(event_id="BL", page_name="LNSPD", 
@@ -109,7 +111,7 @@ def fetch_moca_assesment(event_id="BL|SC", page_name="MOCA",
     # Restrict to baseline as well as screening because the test was
     # administered at both places
     event_mask = None
-    if event_id.contains("|"):
+    if "|" in event_id:
         event_id_sp = event_id.split("|")
         event_mask = (moca_df.EVENT_ID == event_id_sp[0]) | \
                      (moca_df.EVENT_ID == event_id_sp[1])
