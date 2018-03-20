@@ -10,6 +10,7 @@ class Patient(object):
         self.patnum = patnum
         self.enroll_cat = None
         self.enroll_status = None
+        self.education_years = None
 
     def is_enrolled(self):
         return self.enroll_status == "Enrolled"
@@ -46,7 +47,11 @@ class PatientDict(object):
         except KeyError:
             pass
         return ret
-    
+
+    def get_education_years(self, patnum_array):
+        return np.asarray([self.patientsd[x].education_years 
+                            for x in patnum_array])
+
     def get_enrolled_mask(self, patnum_array):
         return np.asarray([True if self.is_patient_enrolled(x) else False
                             for x in patnum_array])
@@ -55,6 +60,19 @@ class PatientDict(object):
         return np.asarray([True if self.is_patient_pd(x) else False
                             for x in patnum_array])
  
+    def add_socio_economics(self):
+        socio_df = utils.fetch_ppmi_data_file("Socio-Economics.csv",
+                "subject")
+        for idx, row in socio_df.iterrows():
+            # if there are duplicates we just take the last value
+            try:
+                self.patientsd[row.PATNO].education_years = row.EDUCYRS
+            except KeyError: 
+                # if a patient doesn't have a status don't put it in
+                pass
+
+
+
     @staticmethod
     def create():
         patients_df = utils.fetch_ppmi_data_file("Patient_Status.csv",
