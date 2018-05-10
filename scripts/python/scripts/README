@@ -1,0 +1,2 @@
+These scripts need to be run from the parent directory so that it can import
+ppmilib and have all the relative paths correct.
