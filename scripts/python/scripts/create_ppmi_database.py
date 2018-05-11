@@ -105,13 +105,14 @@ class PPMIFile:
         resultsd["table_name"] = self.table_name
         return(resultsd)
 
-    def to_sql(self, con, *args, **kwargs):
+    def to_sql(self, con, index=False, *args, **kwargs):
         """
             FIXME: Use SQLAlchemy and keys if queries becomes slow
         """
         ret = None
         if self.table_name is not None:
-            ret = self.pd_file.to_sql(self.table_name, con, *args, **kwargs)
+            ret = self.pd_file.to_sql(self.table_name, con, index=index,
+                    *args, **kwargs)
         return(ret)
 
 
@@ -124,9 +125,11 @@ if __name__ == "__main__":
     # process the csv files one by one
     for filename in filenames:
         ppmi_file = PPMIFile(filename)
+        print("Processing %s" % ppmi_file.base_filename)
         results.append(ppmi_file.fetch_summary_dict())
-        ppmi_file.to_sql(ppmi_curs.connection())
-
+        ppmi_file.to_sql(ppmi_curs.connection(), index=False, 
+                ##Warning## if_exists="replace") # use carefully
+                if_exists="fail")
 
     pd_results = pd.DataFrame.from_dict(results)
     pd_results.to_csv("output/ppmi_files_results.csv", index=False)
