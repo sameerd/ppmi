@@ -9,7 +9,14 @@ import ppmilib
 import ppmilib.utils
 
 class PPMIFile:
-    """ Read in a csv ppmi file and get information about it """
+    """ 
+        Read in a csv ppmi file and extract/set information about it. 
+          * We figure out what table name to put the csv file in. 
+            - First check and see if we have assigned a table name
+            - If there is a single page name in the csv file use that
+            - If we cannot figure out a table name then don't put it in the db
+    
+    """
 
     file_tabled = {
         "FOUND_Status.csv":"FOUND",
@@ -66,6 +73,10 @@ class PPMIFile:
         self.table_name = self.make_table_name()
 
     def check_for_pat_id(self):
+        """ 
+        pat_id is mostly PATNO but sometimes is study_subject_id (in some MRI
+        files)
+        """
         return ("PATNO" in self.pd_headers) or \
                ("study_subject_id" in self.pd_headers)
 
@@ -94,6 +105,14 @@ class PPMIFile:
         resultsd["table_name"] = self.table_name
         return(resultsd)
 
+    def to_sql(self, con, *args, **kwargs):
+        """
+            FIXME: Use SQLAlchemy and keys if queries becomes slow
+        """
+        ret = None
+        if self.table_name is not None:
+            ret = self.pd_file.to_sql(self.table_name, con, *args, **kwargs)
+        return(ret)
 
 
 if __name__ == "__main__":
@@ -106,6 +125,8 @@ if __name__ == "__main__":
     for filename in filenames:
         ppmi_file = PPMIFile(filename)
         results.append(ppmi_file.fetch_summary_dict())
+        ppmi_file.to_sql(ppmi_curs.connection())
+
 
     pd_results = pd.DataFrame.from_dict(results)
     pd_results.to_csv("output/ppmi_files_results.csv", index=False)
@@ -114,4 +135,10 @@ if __name__ == "__main__":
     collisions = pd_results[pd_results.table_name.duplicated(keep=False)]
     if len(collisions):
         print(collisions)
+
+    # Check for the maximum length of the table name
+    tmax = pd_results.table_name.map(lambda x: 0 if x is None else len(x)).max()
+    if (tmax > 8):
+        print ("Maximum Table name is larger than 8")
+        print (pd_results[tmax > 8])
 
