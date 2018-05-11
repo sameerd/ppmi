@@ -9,15 +9,50 @@ import ppmilib
 import ppmilib.utils
 
 class PPMIFile:
+    """ Read in a csv ppmi file and get information about it """
 
     file_tabled = {
+        "FOUND_Status.csv":"FOUND",
+        "IUSM_CATALOG.csv":"IUSM",
         "TAP-PD_OPDM_Assessment.csv":"OPDM",
         "TAP-PD_Kinetics_Device_Testing.csv":"KINETICS",
         "Center-Subject_List.csv":"CENTER",
         "Data_Dictionary.csv":"DATADICT",
         "Benton_Judgment_of_Line_Orientation.csv":"BENTON",
-        "DaTSCAN_SPECT_Visual_Interpretation_Assessment.csv":"DATSCAN",
-        "FBB_Metadata.csv":"FBB"
+        "DaTSCAN_SPECT_Visual_Interpretation_Assessment.csv":"SPECTASS",
+        "MRI_Imaging_Data_Transfer_Information_Source_Document.csv":"MRITRANS",
+        "FBB_Metadata.csv":"FBBMETA",
+        "FBB_Analysis_Data.csv":"FBBANAL",
+        "Pilot_Biospecimen_Analysis_Results_Projects_101_and_103.csv":"BIOANAL",
+        "DaTscan_Striatal_Binding_Ratio_Results.csv":"DATSBR",
+        "AV-133_Image_Metadata.csv":"IMGMETA",
+        "2011_Pilot__Projects_101,_102,_and_103.csv":"PILOT11",
+        "Clinical_Labs.csv":"CLINLABS",
+        "Page_Descriptions.csv":"PAGEDESC",
+        "ST_CATALOG.csv":"STCAT",
+        "RBD_PSG_Eligibility.csv":"RBDPSG",
+        "SPECT_Scan_Information_Source_Document.csv":"SPECTSCN",
+        "Olfactory_UPSIT.csv":"OLFUPSIT",
+        "DATScan_Analysis.csv":"DATANAL",
+        "ind_dat_source_data.csv":"INDDAT",
+        "Inclusion_Exclusion.csv":"INCEXC",
+        "ind_mri_source_data.csv":"INDMRI",
+        "Patient_Status.csv":"PATSTAT",
+        "MDS_UPDRS_Part_III__Post_Dose_.csv":"NUPDRS3",
+        "Initiation_of_PD_Medication-_incidents.csv":"INITMEDS",
+        "Cognitive_Categorization.csv":"COGCAT",
+        "AV-133_SBR_Results.csv":"AV133SBR",
+        "IUSM_BIOSPECIMEN_CELL_CATALOG.csv":"IUSMCAT",
+        "Biospecimen_Analysis_Results.csv":"BIORES",
+        "Code_List.csv":"CODELIST",
+
+        # resolve conflicts
+        "Laboratory_Procedures_with_Elapsed_Times.csv":"LABTIMES",
+        "Laboratory_Procedures.csv":"LABPROC",
+        "Neurological_Exam_-_Cranial_Nerves.csv":"NEURCRAN",
+        "PASE_-_Household_Activity.csv":"PASEHSE",
+        "PASE_-_Leisure_Time_Activity.csv":"PASETIME"
+
         }
 
     def __init__(self, filename):
@@ -55,7 +90,7 @@ class PPMIFile:
         resultsd = {}
         resultsd["basename"] = self.base_filename
         resultsd["pat_id"] = self.has_pat_id
-        resultsd["pag_names"] = self.pag_names_cnt
+        resultsd["pag_cnt"] = self.pag_names_cnt
         resultsd["table_name"] = self.table_name
         return(resultsd)
 
@@ -74,3 +109,9 @@ if __name__ == "__main__":
 
     pd_results = pd.DataFrame.from_dict(results)
     pd_results.to_csv("output/ppmi_files_results.csv", index=False)
+
+    # Check table_names for collisions
+    collisions = pd_results[pd_results.table_name.duplicated(keep=False)]
+    if len(collisions):
+        print(collisions)
+
