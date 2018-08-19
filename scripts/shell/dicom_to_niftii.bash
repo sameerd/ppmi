@@ -57,7 +57,7 @@ unzip -q "${ZIPFILE}" -d "${TMPDIR_DCM}"
 #gzip "${TMPDIR_OUTPUT}/nifti.nii"
 
 # Using new version of dcm2niix
-~/software/dcm2niix/dcm2niix -f nifti.nii -z y \
+~/software/dcm2niix/dcm2niix -f nifti -z y \
     -o "${TMPDIR_OUTPUT}" \
     "${TMPDIR_DCM}"
 
