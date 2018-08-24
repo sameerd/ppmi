@@ -8,7 +8,7 @@ INPUT_DIR=$1
 OUTPUT_DIR=$2
 
 function usage {
-    echo "usage: $programname inputdir outputdir"
+    echo "usage: $PROGRAM_NAME inputdir outputdir"
     echo "  inputdir  : specify input directory (must contain dcm.zip)"
     echo "  outputdir : specify output directory"
 }
