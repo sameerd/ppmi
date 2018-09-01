@@ -56,7 +56,7 @@ WITH A AS ( /* Calculated Part III UPDRS Score for everyone */
 /* Extract UPDRS scores at Baseline and sort in descending order */
 SELECT * from A WHERE EVENT_ID="BL" ORDER BY UPDRS_SCORE DESC
 ```
-The output in SQLite Browser looks something like this
+The output in SQLite Browser looks something like this for the first few rows
 
 | PATNO | EVENT_ID | UPDRS_SCORE | 
 |-------|----------|-------------| 
