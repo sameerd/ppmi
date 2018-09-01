@@ -1,4 +1,4 @@
-# Parkinson's Progressive Markers Initiative [PPMI](https://www.ppmi-info.org/)
+# [PPMI](https://www.ppmi-info.org/) Parkinson's Progressive Markers Initiative 
 
 ## About
 This repository has code that is used to process data from the PPMI dataset.
