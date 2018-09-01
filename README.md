@@ -27,17 +27,19 @@ There are **no data files** stored in this repository.
 1. Install [DB Browser for SQLite](https://sqlitebrowser.org/) and use it
    to open the database that was created for you in the [database directory](./database). 
 
-2. `DB Browser` will will give you information on all the tables in the
+1. `DB Browser` will will give you information on all the tables in the
 database. You can browser the data by table. After you have extracted information into the 
 [data_docs directory](./data_docs/) (see *Setup the database*), you will get
 further information on what the columns represent by looking at the files in the [docs
-directory](./docs/).
-   * [Page_Descriptions.csv](./docs/Page_Descriptions.csv) A general idea of what the tables are named
-   * [Data_Dictionary.csv](./docs/Data_Dictionary.csv) A general idea of what the columns in the table are named
-   * [Code_List.csv](./docs/Code_List.csv) A code book that tells us how certain variables are coded
-   * [Derived Variables Definition](./docs/PPMI_Derived_Variable_Definitions_and_Score_Calculations20160520.pdf) A document that tells us how to create derived variables like UPDRS scores etc. 
+directory](./data_docs/).
+   * [Page_Descriptions.csv](./data_docs/Page_Descriptions.csv) A general idea of what the tables are named
+   * [Data_Dictionary.csv](./data_docs/Data_Dictionary.csv) A general idea of what the columns in the table are named
+   * [Code_List.csv](./data_docs/Code_List.csv) A code book that tells us how certain variables are coded
+   * [Derived Variables
+     Definition](./data_docs/Derived_Variable_Definitions_and_Score_Calculations.csv)
+A document that tells us how to create derived variables like UPDRS scores etc. 
 
-2. Use SQL scripts to extract information from the database.
+1. Use SQL scripts to extract information from the database.
 
 ```sql
 WITH A AS ( /* Calculated Part III UPDRS Score for everyone */
