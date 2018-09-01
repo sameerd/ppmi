@@ -14,9 +14,9 @@ There are **no data files** stored in this repository.
     1. Click the link on the left hand side (bottom) where it says `ALL` 
     1. Download `ALL tabular data` (csv format) and `ALL documents and zip files` [48.0 MB]
 
-1. Clone this repository
+1. Clone this github repository
 
-1. Save the downloaded files in the [data_docs directory](./data_docs/).
+1. Save the downloaded files in the [data_docs directory](./data_docs/) of this cloned repository.
    Extract any zip files if necessary.
 
 1. Run the [create_ppmi_database.py](./python/scripts/create_ppmi_database.py)
@@ -24,8 +24,8 @@ There are **no data files** stored in this repository.
 
 ## Using the database
 
-1. Install the [DB Browser for SQLite](https://sqlitebrowser.org/) and use it
-   to open the database that was created in the [database directory](./database). 
+1. Install [DB Browser for SQLite](https://sqlitebrowser.org/) and use it
+   to open the database that was created for you in the [database directory](./database). 
 
 2. `DB Browser` will will give you information on all the tables in the
 database. You can browser the data by table. After you have extracted information into the 
