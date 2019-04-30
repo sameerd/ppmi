@@ -58,8 +58,9 @@ class PPMIFile:
         "Laboratory_Procedures.csv":"LABPROC",
         "Neurological_Exam_-_Cranial_Nerves.csv":"NEURCRAN",
         "PASE_-_Household_Activity.csv":"PASEHSE",
-        "PASE_-_Leisure_Time_Activity.csv":"PASETIME"
-
+        "PASE_-_Leisure_Time_Activity.csv":"PASETIME",
+        "Lower_Extremity_Function__Mobility_.csv":"NQOLEEFS",
+        "Upper_Extremity_Function-_Short_Form.csv":"NQOUEEFS"
         }
 
     def __init__(self, filename):
