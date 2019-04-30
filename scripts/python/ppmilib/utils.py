@@ -50,7 +50,7 @@ def fetch_ppmi_csv_filenames():
     return glob.glob(os.path.join(BASEDIR, "data_docs", "*.csv"))
 
 def fetch_raw_ppmi_data_file(filepath):
-    return pandas.read_csv(filepath,
+    return pd.read_csv(filepath,
             low_memory=False,
             dtype={'PATNO':str})
 

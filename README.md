@@ -19,8 +19,12 @@ There are **no data files** stored in this repository.
 1. Save the downloaded files in the [data_docs directory](./data_docs/) of this cloned repository.
    Extract any zip files if necessary.
 
-1. Run the [create_ppmi_database.py](./python/scripts/create_ppmi_database.py)
+1. Run the [create\_ppmi\_database.py](./scripts/python/scripts/create_ppmi_database.py)
    script which will create the ppmi database in the [database directory](./database)
+```shell
+cd scripts/python
+python scripts/create_ppmi_database.py 
+```
 
 ## Using the database
 
