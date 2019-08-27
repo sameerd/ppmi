@@ -31,7 +31,7 @@ python scripts/create_ppmi_database.py
 1. Install [DB Browser for SQLite](https://sqlitebrowser.org/) and use it
    to open the database that was created for you in the [database directory](./database). 
 
-1. `DB Browser` will will give you information on all the tables in the
+1. `DB Browser` will give you information on all the tables in the
 database. You can browser the data by table. After you have extracted information into the 
 [data_docs directory](./data_docs/) (see *Setup the database*), you will get
 further information on what the columns represent by looking at the files in the [docs
