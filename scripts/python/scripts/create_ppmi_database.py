@@ -60,7 +60,14 @@ class PPMIFile:
         "PASE_-_Household_Activity.csv":"PASEHSE",
         "PASE_-_Leisure_Time_Activity.csv":"PASETIME",
         "Lower_Extremity_Function__Mobility_.csv":"NQOLEEFS",
-        "Upper_Extremity_Function-_Short_Form.csv":"NQOUEEFS"
+        "Upper_Extremity_Function-_Short_Form.csv":"NQOUEEFS",
+        "Prodromal_Diagnostic_Questionnaire.csv":"PRODIAGQ",
+        "Use_of_PD_Medication.csv":"PMEDUSE",
+        "Primary_Diagnosis.csv":"PRIMDXPD",
+        "Cognitive_Assessments.csv":"COGTIME",
+        "Semantic_Fluency.csv":"SFT",
+        "MDS_UPDRS_Part_III.csv":"NUPDRS3X",
+        "Vital_Signs.csv":"VITAL"
         }
 
     def __init__(self, filename):
