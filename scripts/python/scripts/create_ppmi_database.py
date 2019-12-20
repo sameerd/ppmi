@@ -1,3 +1,4 @@
+import sys
 import os
 import os.path
 
@@ -5,8 +6,13 @@ import sqlite3
 
 import pandas as pd
 
+# Fix for not being able to import ppmilib when running from the command line
+# See https://stackoverflow.com/questions/29548587/import-fails-when-running-python-as-script-but-not-in-ipython
+sys.path = [''] + sys.path # Add current directory to the path
 import ppmilib
 import ppmilib.utils
+
+sys.exit()
 
 class PPMIFile:
     """ 
