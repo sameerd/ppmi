@@ -12,8 +12,6 @@ sys.path = [''] + sys.path # Add current directory to the path
 import ppmilib
 import ppmilib.utils
 
-sys.exit()
-
 class PPMIFile:
     """ 
         Read in a csv ppmi file and extract/set information about it. 
